@@ -59,10 +59,6 @@ func InitConfig() (*Config, error) {
 	return &cfg, nil
 }
 
-//func unmarshal(cfg *Config) error {
-//	return viper.UnmarshalKey("http", &cfg.HTTP)
-//}
-
 func setFromEnv(cfg *Config) {
 	cfg.Rabbit.Username = os.Getenv("RABBIT_USERNAME")
 	cfg.Rabbit.Password = os.Getenv("RABBIT_PASSWORD")
