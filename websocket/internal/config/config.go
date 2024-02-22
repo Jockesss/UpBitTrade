@@ -42,11 +42,11 @@ type (
 
 // InitConfig initializes the configuration for the application.
 func InitConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load("../.env"); err != nil {
 		log.Printf("No .env file found or error loading .env file: %v", err)
 	}
 
-	if err := parseConfigFile("./", os.Getenv("APP_ENV")); err != nil {
+	if err := parseConfigFile("../", os.Getenv("APP_ENV")); err != nil {
 		return nil, err
 	}
 
