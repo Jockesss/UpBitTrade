@@ -4,16 +4,19 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"upbit/internal/config"
 	"upbit/internal/domain"
 	"upbit/internal/ws"
 	"upbit/pkg/log"
+	"upbit/pkg/rabbitmq"
 )
 
 type Handler struct {
-	cmMap map[string]map[string]*HandlerEntry
-	cm    *config.Config
+	cmMap          map[string]map[string]*HandlerEntry
+	cm             *config.Config
+	rabbitProducer *rabbitmq.Producer
 }
 
 type HandlerEntry struct {
@@ -21,10 +24,11 @@ type HandlerEntry struct {
 	cancel context.CancelFunc
 }
 
-func NewHandler(config *config.Config) *Handler {
+func NewHandler(config *config.Config, rabbitProducer *rabbitmq.Producer) *Handler {
 	return &Handler{
-		cmMap: make(map[string]map[string]*HandlerEntry),
-		cm:    config,
+		cmMap:          make(map[string]map[string]*HandlerEntry),
+		cm:             config,
+		rabbitProducer: rabbitProducer,
 	}
 }
 
@@ -51,9 +55,14 @@ func (h *Handler) startHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	connManager := ws.NewConnectionManager(ctx, h.cm.UpBit.WsURL, platform, h.cm)
+	connManager := ws.NewConnectionManager(ctx, h.cm.UpBit.WsURL, platform, h.cm, h.rabbitProducer)
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Logger.Info(fmt.Sprintf("Recovered in startManager for %s: %v", platform, r))
+			}
+		}()
 		connManager.StartManager(ctx, h.cm.UpBit.WsURL, UpBitToken, platform, dataType, restartChan)
 	}()
 
@@ -88,6 +97,6 @@ func (h *Handler) Routes() *chi.Mux {
 	router := chi.NewRouter()
 	router.Get("/start/{platform}/{dataType}", h.startHandler)
 	router.Get("/stop/{platform}/{dataType}", h.stopHandler)
-	//router.Handle("/metrics", promhttp.Handler())
+	router.Handle("/metrics", promhttp.Handler())
 	return router
 }

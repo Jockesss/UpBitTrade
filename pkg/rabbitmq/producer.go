@@ -13,9 +13,9 @@ type Producer struct {
 	cfg  *config.Config
 }
 
-func NewProducer(cfg *config.Config) (*Producer, error) {
+func NewProducer(cfg *config.Config, connection RabbitConnection) (*Producer, error) {
 	retries := 5
-	conn, err := NewConnectWithRetries(cfg, retries)
+	conn, err := connection.ConnectWithRetries(cfg, retries)
 	if err != nil {
 		return nil, fmt.Errorf("producer failed to connect to Rabbit: %s", err)
 	}

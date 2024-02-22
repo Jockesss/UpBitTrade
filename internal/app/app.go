@@ -12,8 +12,10 @@ import (
 	"time"
 	"upbit/internal/config"
 	v1 "upbit/internal/http/v1"
+	"upbit/internal/metrics"
 	"upbit/internal/server"
 	"upbit/pkg/log"
+	"upbit/pkg/rabbitmq"
 )
 
 func Run() {
@@ -23,7 +25,10 @@ func Run() {
 	}
 	log.Logger.Info(fmt.Sprintf("Config FILE --> ", cfg))
 
-	handler := v1.NewHandler(cfg)
+	rabbitConnect := rabbitmq.NewConnectWithRetries(cfg)
+	rabbitProducer, _ := rabbitmq.NewProducer(cfg, rabbitConnect)
+
+	handler := v1.NewHandler(cfg, rabbitProducer)
 	srv := server.NewServer(cfg, handler.Routes())
 
 	go func() {
@@ -32,7 +37,7 @@ func Run() {
 		}
 	}()
 
-	//go metrics.UpdateResourceUsageMetrics(3)
+	go metrics.UpdateResourceUsageMetrics(3)
 
 	log.Logger.Info("Server started")
 

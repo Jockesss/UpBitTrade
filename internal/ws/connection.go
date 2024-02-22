@@ -13,20 +13,6 @@ import (
 	"upbit/pkg/rabbitmq"
 )
 
-func WebsocketConnect(url string, t domain.Token) (*websocket.Conn, error) {
-	header := http.Header{}
-	header.Add("Authorization", "Bearer "+token.CreateToken(t))
-
-	dialer := *websocket.DefaultDialer
-	dialer.HandshakeTimeout = 10 * time.Second
-	dialer.WriteBufferSize = 1024
-	dialer.ReadBufferSize = 1024
-
-	ws, _, err := websocket.DefaultDialer.Dial(url, header)
-
-	return ws, err
-}
-
 type ConnectionManager struct {
 	Ctx       context.Context
 	Cancel    context.CancelFunc
@@ -35,14 +21,16 @@ type ConnectionManager struct {
 	Platform  string
 	WebSocket *websocket.Conn
 	Cfg       *config.Config
+	RP        *rabbitmq.Producer
 }
 
-func NewConnectionManager(ctx context.Context, url string, platform string, cfg *config.Config) *ConnectionManager {
+func NewConnectionManager(ctx context.Context, url string, platform string, cfg *config.Config, rp *rabbitmq.Producer) *ConnectionManager {
 	return &ConnectionManager{
 		Ctx:      ctx,
 		WsURL:    url,
 		Platform: platform,
 		Cfg:      cfg,
+		RP:       rp,
 	}
 }
 
@@ -115,12 +103,6 @@ func (cm *ConnectionManager) connectAndHandle(restartChan chan<- string, dataTyp
 }
 
 func (cm *ConnectionManager) handleMessages(ws *websocket.Conn, queue string) {
-	producer, err := rabbitmq.NewProducer(cm.Cfg)
-	if err != nil {
-		log.Logger.Error("Could not create producer", zap.Error(err))
-		return
-	}
-	defer producer.Close()
 
 	for {
 		_, message, err := ws.ReadMessage()
@@ -132,8 +114,8 @@ func (cm *ConnectionManager) handleMessages(ws *websocket.Conn, queue string) {
 		// Вывод полученного сообщения в консоль
 		//fmt.Printf("Received message for queue %s: %s\n", queue, string(message))
 
-		if producer != nil {
-			if err := producer.SendMessage(queue, string(message)); err != nil {
+		if cm.RP != nil {
+			if err := cm.RP.SendMessage(queue, string(message)); err != nil {
 				log.Logger.Error("Failed to send message to queue "+queue, zap.Error(err))
 			}
 		} else {
@@ -170,4 +152,18 @@ func (cm *ConnectionManager) sendRequest(dataType string, platform string) {
 		log.Logger.Error("Failed to write to websocket", zap.Error(err))
 		return
 	}
+}
+
+func WebsocketConnect(url string, t domain.Token) (*websocket.Conn, error) {
+	header := http.Header{}
+	header.Add("Authorization", "Bearer "+token.CreateToken(t))
+
+	dialer := *websocket.DefaultDialer
+	dialer.HandshakeTimeout = 10 * time.Second
+	dialer.WriteBufferSize = 1024
+	dialer.ReadBufferSize = 1024
+
+	ws, _, err := websocket.DefaultDialer.Dial(url, header)
+
+	return ws, err
 }
