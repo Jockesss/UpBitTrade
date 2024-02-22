@@ -36,7 +36,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(cpuUsageGauge, diskUsageGauge, ramUsageGauge)
+	prometheus.MustRegister(cpuUsageGauge, diskUsageGauge, ramUsageGauge, webSocketConnectionGauge, rabbitMQConnectionGauge)
 }
 
 func UpdateResourceUsageMetrics(sec int) {
@@ -52,47 +52,56 @@ func UpdateResourceUsageMetrics(sec int) {
 		ramStats, _ := mem.VirtualMemory()
 		ramUsageGauge.Set(ramStats.UsedPercent)
 
-		if webSocketIsConnected() {
-			webSocketConnectionGauge.Set(1) // Подключено
-		} else {
-			webSocketConnectionGauge.Set(0) // Отключено
-		}
+		//if webSocketIsConnected(webSocketClient) {
+		//	webSocketConnectionGauge.Set(1) // Подключено
+		//} else {
+		//	webSocketConnectionGauge.Set(0) // Отключено
+		//}
 
-		// Проверяем состояние подключения к RabbitMQ
-		if rabbitMQIsConnected() {
-			rabbitMQConnectionGauge.Set(1) // Подключено
-		} else {
-			rabbitMQConnectionGauge.Set(0) // Отключено
-		}
+		//// Проверяем состояние подключения к RabbitMQ
+		//if rabbitMQIsConnected() {
+		//	rabbitMQConnectionGauge.Set(1) // Подключено
+		//} else {
+		//	rabbitMQConnectionGauge.Set(0) // Отключено
+		//}
 
 		time.Sleep(time.Duration(sec) * time.Second)
 	}
 }
 
-//func UpdateConnectionMetrics(webSocketClient *websocket.Conn, rabbitMQConn *amqp.Connection) {
-//	for {
-//		// Проверяем состояние подключения к WebSocket
-//		if webSocketIsConnected(webSocketClient) {
-//			webSocketConnectionGauge.Set(1) // Подключено
-//		} else {
-//			webSocketConnectionGauge.Set(0) // Отключено
-//		}
-//
-//		// Проверяем состояние подключения к RabbitMQ
-//		if rabbitMQIsConnected(rabbitMQConn) {
-//			rabbitMQConnectionGauge.Set(1) // Подключено
-//		} else {
-//			rabbitMQConnectionGauge.Set(0) // Отключено
-//		}
-//
-//		time.Sleep(10 * time.Second) // Например, проверяем каждые 10 секунд
+//func webSocketIsConnected(ws *websocket.Conn) bool {
+//	// Не блокирующее чтение
+//	err := ws.SetReadDeadline(time.Now().Add(1 * time.Second))
+//	if err != nil {
+//		return false
 //	}
+//	defer func(ws *websocket.Conn, t time.Time) {
+//		err := ws.SetReadDeadline(t)
+//		if err != nil {
+//
+//		}
+//	}(ws, time.Time{}) // Сброс после использования
+//
+//	if err := ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+//		return false // Если не можем отправить пинг, соединение мертво
+//	}
+//
+//	_, _, err = ws.ReadMessage()
+//	if err != nil {
+//		return false // Если не получаем сообщение, соединение мертво
+//	}
+//
+//	return true
 //}
 
-func webSocketIsConnected() bool {
-	return webSocketClient != nil && webSocketClient.UnderlyingConn() != nil && webSocketClient.UnderlyingConn().RemoteAddr() != nil
-}
-
-func rabbitMQIsConnected() bool {
-	return rabbitMQConn != nil && !rabbitMQConn.IsClosed()
-}
+//func rabbitMQIsConnected() bool {
+//	conn, err := rabbitmq.GetConnection(cfg)
+//	if err != nil {
+//		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+//	}
+//	rabbitMQConnectionGauge.Set(0) // Предполагаем, что подключение разорвано
+//	if conn, _ := rabbitmq.GetConnection(cfg); conn != nil && !conn.IsClosed() {
+//		rabbitMQConnectionGauge.Set(1) // Подключение активно
+//	}
+//	return rabbitMQConn != nil && !rabbitMQConn.IsClosed()
+//}

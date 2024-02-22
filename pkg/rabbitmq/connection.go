@@ -8,7 +8,17 @@ import (
 	"upbit/pkg/log"
 )
 
-func NewConnectWithRetries(cfg *config.Config, retries int) (*amqp.Connection, error) {
+type Connection struct {
+	instance *amqp.Connection
+	cfg      *config.Config
+	//once     sync.Once
+}
+
+func NewConnectWithRetries(cfg *config.Config) *Connection {
+	return &Connection{cfg: cfg}
+}
+
+func (c *Connection) ConnectWithRetries(cfg *config.Config, retries int) (*amqp.Connection, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("config is nil")
 	}
