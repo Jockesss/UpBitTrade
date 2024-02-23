@@ -1,6 +1,9 @@
 package app
 
 import (
+	"common/config"
+	"common/pkg/log"
+	"common/pkg/rabbitmq"
 	"context"
 	"errors"
 	"fmt"
@@ -10,12 +13,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"upbit/internal/config"
 	v1 "upbit/internal/http/v1"
 	"upbit/internal/metrics"
 	"upbit/internal/server"
-	"upbit/pkg/log"
-	"upbit/pkg/rabbitmq"
 )
 
 func Run() {

@@ -1,10 +1,10 @@
 package rabbitmq
 
 import (
+	"common/config"
 	"fmt"
 	"github.com/streadway/amqp"
 	"log"
-	"upbit/internal/config"
 )
 
 type Producer struct {

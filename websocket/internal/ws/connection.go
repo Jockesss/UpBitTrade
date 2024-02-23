@@ -1,16 +1,16 @@
 package ws
 
 import (
+	"common/config"
+	"common/pkg/log"
+	"common/pkg/rabbitmq"
 	"context"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
-	"upbit/internal/config"
 	"upbit/internal/domain"
 	"upbit/internal/ws/token"
-	"upbit/pkg/log"
-	"upbit/pkg/rabbitmq"
 )
 
 type ConnectionManager struct {

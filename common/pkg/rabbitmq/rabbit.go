@@ -1,8 +1,8 @@
 package rabbitmq
 
 import (
+	"common/config"
 	"github.com/streadway/amqp"
-	"upbit/internal/config"
 )
 
 type RabbitConnection interface {
