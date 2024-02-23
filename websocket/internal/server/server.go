@@ -1,9 +1,9 @@
 package server
 
 import (
+	"common/config"
 	"context"
 	"net/http"
-	"upbit/internal/config"
 )
 
 type Server struct {

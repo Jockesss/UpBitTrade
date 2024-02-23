@@ -1,11 +1,11 @@
 package rabbitmq
 
 import (
+	"common/config"
+	"common/pkg/log"
 	"fmt"
 	"github.com/streadway/amqp"
 	"time"
-	"upbit/internal/config"
-	"upbit/pkg/log"
 )
 
 type Connection struct {
